@@ -1,5 +1,7 @@
 # SecureStar
 
+Original Development Repo: https://github.com/kbatchelli/computeruse
+
 > **Defending Tzafon/Northstar-CUA-Fast against visual prompt injection via DPO on synthetic prose preference pairs.**
 >
 > External benchmark result: **CyberSecEval3 visual prompt injection ASR drops 69.7% → 6.6%** (-63 percentage points, 91% relative reduction) — apples-to-apples on the same 76 security-violating cases, with **0 regressions** on previously-safe cases.
