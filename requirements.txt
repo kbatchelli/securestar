@@ -1,0 +1,8 @@
+torch>=2.1
+transformers>=4.45
+peft>=0.13
+trl>=0.12
+datasets>=2.20
+accelerate>=0.34
+Pillow>=10
+jinja2>=3.1

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+data/qa_train/
+data/dpo_train/
+.DS_Store
