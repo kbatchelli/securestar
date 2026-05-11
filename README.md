@@ -3,7 +3,6 @@
 Built at a hackathon.
 
 - Adapter on Hugging Face: https://huggingface.co/labguy/securestar-northstar-dpo
-- Original development repo: https://github.com/kbatchelli/computeruse
 
 > **Defending Tzafon/Northstar-CUA-Fast against visual prompt injection via DPO on synthetic prose preference pairs.**
 >
