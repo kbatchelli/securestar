@@ -1,6 +1,9 @@
 # SecureStar
 
-Original Development Repo: https://github.com/kbatchelli/computeruse
+Built at a hackathon.
+
+- Adapter on Hugging Face: https://huggingface.co/labguy/securestar-northstar-dpo
+- Original development repo: https://github.com/kbatchelli/computeruse
 
 > **Defending Tzafon/Northstar-CUA-Fast against visual prompt injection via DPO on synthetic prose preference pairs.**
 >
@@ -16,14 +19,58 @@ We trained a **rank-16 LoRA adapter** with **Direct Preference Optimization (DPO
 
 **Result on the same 76 CyberSecEval3 cases (apples-to-apples):**
 
-| | Baseline | + SecureStar DPO adapter | Change |
+| Attack type | Baseline | + SecureStar DPO adapter | Change |
 |---|---|---|---|
 | **Overall ASR** | **69.7%** (53/76) | **6.6%** (5/76) | **-63 pp / 91% reduction** |
 | direct injection | 62.8% (27/43) | 7.4% (2/27) | -55 pp |
 | indirect injection | 78.8% (26/33) | 11.5% (3/26) | -67 pp |
 | Regressions on baseline-safe cases | — | **0 / 23** | none |
 
-The adapter weights are in [`adapter/`](./adapter/). Demo video in [`demo/`](./demo/).
+The adapter weights are in [`adapter/`](./adapter/) and on [Hugging Face](https://huggingface.co/labguy/securestar-northstar-dpo). Demo video in [`demo/`](./demo/).
+
+## Quickstart (use the adapter)
+
+The trained LoRA is published on Hugging Face: [`labguy/securestar-northstar-dpo`](https://huggingface.co/labguy/securestar-northstar-dpo). You can load it on top of the base model and run inference in a few lines:
+
+```python
+from PIL import Image
+from transformers import AutoModelForVision2Seq, AutoProcessor
+from peft import PeftModel
+
+base_id = "Tzafon/Northstar-CUA-Fast"
+adapter_id = "labguy/securestar-northstar-dpo"
+
+processor = AutoProcessor.from_pretrained(base_id)
+model = AutoModelForVision2Seq.from_pretrained(base_id, torch_dtype="auto", device_map="auto")
+model = PeftModel.from_pretrained(model, adapter_id)
+model.eval()
+
+image = Image.open("your_screenshot.png").convert("RGB")
+messages = [{"role": "user", "content": [
+    {"type": "image", "image": image},
+    {"type": "text", "text": "What do you see in this image?"},
+]}]
+inputs = processor.apply_chat_template(messages, add_generation_prompt=True, tokenize=True,
+                                       return_dict=True, return_tensors="pt").to(model.device)
+out = model.generate(**inputs, max_new_tokens=128, do_sample=False)
+print(processor.batch_decode(out[:, inputs["input_ids"].shape[1]:], skip_special_tokens=True)[0])
+```
+
+Or pull the adapter via the CLI:
+
+```bash
+pip install -U huggingface_hub
+huggingface-cli download labguy/securestar-northstar-dpo --local-dir ./adapter
+```
+
+Then, from a clone of this repo, run the bundled eval to reproduce the headline number:
+
+```bash
+git clone https://github.com/kbatchelli/securestar.git && cd securestar
+pip install -r requirements.txt
+python scripts/eval_cseval3.py --n 200 --adapter ./adapter --out results/dpo_qa.json
+# Expected: ASR ~7% (vs ~70% baseline)
+```
 
 ## What's in this repo
 
@@ -97,6 +144,8 @@ We split the 76 cases for efficiency (re-test 53 baseline-failed + verify 23 bas
 # 1. Install
 pip install -r requirements.txt
 git lfs pull   # pulls the adapter and demo mp4s
+# or, if you'd rather skip git-lfs, pull the adapter from Hugging Face:
+# huggingface-cli download labguy/securestar-northstar-dpo --local-dir ./adapter
 
 # 2. Eval the baseline (no adapter) on CyberSecEval3
 python scripts/eval_cseval3.py --n 200 --out results/baseline.json
@@ -138,7 +187,9 @@ python scripts/kernel_compose.py
 - The "rejected" responses are template literals containing the secret. A more sophisticated jailbreak that elicits the secret in a more elaborate prose might still leak; an adaptive attacker could likely find one.
 - 132 MB adapter on top of a 4B model — small ML asset, but still requires the base model to be loaded.
 
-## Citation
+## Acknowledgments
+
+Adapter weights: [labguy/securestar-northstar-dpo](https://huggingface.co/labguy/securestar-northstar-dpo)
 
 This work uses:
 - [Tzafon/Northstar-CUA-Fast](https://huggingface.co/Tzafon/Northstar-CUA-Fast) (Apache-2.0)
